@@ -5,6 +5,28 @@ import apprise
 import requests
 
 
+def toggle_keka_attendance(org, headers, locationAddress, punchStatus):
+    method = "POST"
+    url = f"https://{org}.keka.com/k/dashboard/api/mytime/attendance/webclockin"
+
+    payload = {
+        "timestamp": (dt.datetime.now() - dt.timedelta(hours=5, minutes=30)).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        "attendanceLogSource": 1,
+        "locationAddress": locationAddress,
+        "manualClockinType": 1,
+        "note": "",
+        "originalPunchStatus": punchStatus # 0 for clock-in, 1 for clock-out
+    }
+
+    response = requests.request(
+        method, 
+        url, 
+        headers=headers, 
+        json=payload
+        )
+    return response
+
+
 def keka_attendance(org, access_token, locationAddress=None):
     headers = {
         'authority': f'{org}.keka.com',
@@ -26,25 +48,18 @@ def keka_attendance(org, access_token, locationAddress=None):
         'x-requested-with': 'XMLHttpRequest'
     }
 
-    cookies = {
-        'Subdomain': f'{org}.keka.com',
-        '_ga': 'GA1.1.835467246.1675746350',
-        '_ga_9XJPTJPZEE': 'GS1.1.1676888005.10.1.1676888391.0.0.0',
-        'ai_user': 'EdsIhbarLWlBBURy3IWMa0|2023-06-26T04:41:14.723Z',
-        '_clck': 'kvskda|2|ff8|0|1227',
-        '_clsk': 'fk1q8x|1695357999329|1|0|v.clarity.ms/collect',
-        'ai_session': 'kw7ublF2plJqPq5FJ4Q+Wg|1695357989703|1695357989703',
-    }
-
     method = "GET"
     url = f"https://{org}.keka.com/k/dashboard/api/mytime/attendance/attendancedayrequests"
     response = requests.request(
-        method, 
-        url, 
-        headers=headers, 
-        cookies=cookies
+        method,
+        url,
+        headers=headers,
         )
+
     data = response.json()
+
+    # with open("response_data.json", "w") as f:
+    #     f.write(json.dumps(data, indent=4))
 
     if data['data']['webclockinLastEntry']:
         punchStatus = data['data']['webclockinLastEntry']['punchStatus']
@@ -56,25 +71,7 @@ def keka_attendance(org, access_token, locationAddress=None):
     # else:
     #     print("Keka already clocked-in, clocking out")
 
-    method = "POST"
-    url = f"https://{org}.keka.com/k/dashboard/api/mytime/attendance/webclockin"
-
-    payload = {
-        "timestamp": (dt.datetime.now() - dt.timedelta(hours=5, minutes=30)).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-        "attendanceLogSource": 1,
-        "locationAddress": locationAddress,
-        "manualClockinType": 1,
-        "note": "",
-        "originalPunchStatus": not punchStatus # 0 for click-in, 1 for clock-out
-    }
-
-    response = requests.request(
-        method, 
-        url, 
-        headers=headers, 
-        cookies=cookies, 
-        json=payload
-        )
+    response = toggle_keka_attendance(org, headers, locationAddress, not punchStatus)
     return response, punchStatus
 
 
@@ -89,7 +86,7 @@ for item in config.values():
         )
 
     apobj = apprise.Apprise()
-    if item.get("pbul_access_tokens"):
+    if item.get("pbul_access_token"):
         apobj.add(f"pbul://{item['pbul_access_token']}", tag='pbul')
 
     if response.status_code == requests.codes.ok:

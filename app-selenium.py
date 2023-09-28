@@ -38,7 +38,7 @@ def clockin():
     driver.find_element(By.XPATH, "//*[contains(text(), 'Web Clock-In')]").click()
     driver.find_element(By.XPATH, "//*[contains(text(), 'Cancel')]").click() # Cancel allow location
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Clock-out')]")))
-    driver.save_screenshot(f"Screenshots/{dt.datetime.now().isoformat()}-clockin.png")
+    driver.save_screenshot(f"Screenshots/{dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}-clockin.png")
     print("clocked-in")
     apobj.notify(title="Keka Attendance", body="clocked-in")
 
@@ -48,7 +48,7 @@ def clockout():
     driver.find_element(By.XPATH, "//*[contains(text(), 'Clock-out')]").click()
     driver.find_element(By.XPATH, "//*[contains(text(), 'Cancel')]").click() # Cancel allow location
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Web Clock-In')]")))
-    driver.save_screenshot(f"Screenshots/{dt.datetime.now().isoformat()}-clockout.png")
+    driver.save_screenshot(f"Screenshots/{dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}-clockout.png")
     print("clocked-out")
     apobj.notify(title="Keka Attendance", body="clocked-out")
 

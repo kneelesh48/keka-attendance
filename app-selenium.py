@@ -67,6 +67,7 @@ for item in config.values():
 
     driver.get("https://sedin.keka.com/#/home/dashboard")
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "home-attendance-clockin-widget button")))
+    print("Page loaded!")
 
     text = driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").text
 

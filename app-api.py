@@ -84,25 +84,27 @@ with open('config.json') as f:
 
 apobj = apprise.Apprise()
 
-if config.get("pbul_access_token"):
-    apobj.add(f"pbul://{config['pbul_access_token']}", tag='pbul')
 
-response, punchStatus = keka_attendance(
-    org=config['org'], 
-    access_token=config['access_token'], 
-    locationAddress=config.get('locationAddress')
-    )
+for item in config.values():
+    if item.get("pbul_access_token"):
+        apobj.add(f"pbul://{item['pbul_access_token']}", tag='pbul')
 
-if response.status_code == requests.codes.ok:
-    if punchStatus:
-        print("clocked-in")
-        apobj.notify(title="Keka Attendance", body="clocked-in")
+    response, punchStatus = keka_attendance(
+        org=item['org'], 
+        access_token=item['access_token'], 
+        locationAddress=item.get('locationAddress')
+        )
+
+    if response.status_code == requests.codes.ok:
+        if punchStatus:
+            print("clocked-in")
+            apobj.notify(title="Keka Attendance", body="clocked-in")
+        else:
+            print("clocked-out")
+            apobj.notify(title="Keka Attendance", body="clocked-out")
+
+        with open('response_data.json', 'w') as f:
+            json.dump(response.json(), f, indent=4)
     else:
-        print("clocked-out")
-        apobj.notify(title="Keka Attendance", body="clocked-out")
-
-    with open('response_data.json', 'w') as f:
-        json.dump(response.json(), f, indent=4)
-else:
-    print('failed')
-    apobj.notify(title="Keka Attendance", body="Keka attendance bot failed")
+        print('failed')
+        apobj.notify(title="Keka Attendance", body="Keka attendance bot failed")

@@ -14,7 +14,7 @@ if len(sys.argv) > 1:
     opt = sys.argv[1]
 
 
-def selenium_prep():
+def selenium_prep(profile_directory):
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1280,720")
     options.add_argument("--headless")
@@ -28,26 +28,11 @@ def selenium_prep():
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
     options.add_argument("user-data-dir=/root/Selenium")
-    options.add_argument("profile-directory=Default")
+    options.add_argument(f"profile-directory={profile_directory}")
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(2)
     return driver
 
-
-with open('config.json') as f:
-    config = json.load(f)
-
-apobj = apprise.Apprise()
-
-if config.get("pbul_access_token"):
-    apobj.add(f"pbul://{config['pbul_access_token']}", tag='pbul')
-
-driver = selenium_prep()
-
-driver.get("https://sedin.keka.com/#/home/dashboard")
-WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "home-attendance-clockin-widget button")))
-
-text = driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").text
 
 def clockin():
     driver.find_element(By.XPATH, "//*[contains(text(), 'Web Clock-In')]").click()
@@ -56,6 +41,7 @@ def clockin():
     driver.save_screenshot(f"Screenshots/{dt.datetime.now().isoformat()}-clockin.png")
     print("clocked-in")
     apobj.notify(title="Keka Attendance", body="clocked-in")
+
 
 def clockout():
     driver.find_element(By.XPATH, "//*[contains(text(), 'Clock-out')]").click()
@@ -66,19 +52,37 @@ def clockout():
     print("clocked-out")
     apobj.notify(title="Keka Attendance", body="clocked-out")
 
-if opt:
-    if opt == 'clock-in' and text == "Web Clock-In":
-        clockin()
-    elif opt == 'clock-out' and text == "Clock-out":
-        clockout()
+
+with open('config.json') as f:
+    config = json.load(f)
+
+apobj = apprise.Apprise()
+
+
+for item in config.values():
+    if item.get("pbul_access_token"):
+        apobj.add(f"pbul://{item['pbul_access_token']}", tag='pbul')
+
+    driver = selenium_prep(item["profile_directory"])
+
+    driver.get("https://sedin.keka.com/#/home/dashboard")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "home-attendance-clockin-widget button")))
+
+    text = driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").text
+
+    if opt:
+        if opt == 'clock-in' and text == "Web Clock-In":
+            clockin()
+        elif opt == 'clock-out' and text == "Clock-out":
+            clockout()
+        else:
+            print(f"{opt} already done")
+            apobj.notify(title="Keka Attendance", body=f"{opt} already done")
     else:
-        print(f"{opt} already done")
-        apobj.notify(title="Keka Attendance", body=f"{opt} already done")
-else:
-    if text == "Web Clock-In":
-        clockin()
+        if text == "Web Clock-In":
+            clockin()
 
-    elif text == "Clock-out":
-        clockout()
+        elif text == "Clock-out":
+            clockout()
 
-driver.quit()
+    driver.quit()

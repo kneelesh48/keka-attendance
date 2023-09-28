@@ -55,9 +55,13 @@ def keka_attendance(org, access_token, locationAddress=None):
         url,
         headers=headers,
         )
-
-    data = response.json()
-
+    if response.status_code == requests.codes.ok:
+        data = response.json()
+    else:
+        print(response.status_code)
+        print(response.text)
+        apobj.notify(title="Keka Attendance", body="Token Expired")
+        raise Exception("Token Expired")
     # with open("response_data.json", "w") as f:
     #     f.write(json.dumps(data, indent=4))
 
@@ -78,16 +82,17 @@ def keka_attendance(org, access_token, locationAddress=None):
 with open('config.json') as f:
     config = json.load(f)
 
+apobj = apprise.Apprise()
+
 for item in config.values():
+    if item.get("pbul_access_token"):
+        apobj.add(f"pbul://{item['pbul_access_token']}", tag='pbul')
+
     response, punchStatus = keka_attendance(
         org=item['org'], 
         access_token=item['access_token'], 
         locationAddress=item.get('locationAddress')
         )
-
-    apobj = apprise.Apprise()
-    if item.get("pbul_access_token"):
-        apobj.add(f"pbul://{item['pbul_access_token']}", tag='pbul')
 
     if response.status_code == requests.codes.ok:
         if punchStatus:

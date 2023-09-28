@@ -1,11 +1,17 @@
 import sys
+import json
 import datetime as dt
 
 import apprise
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait 
+from selenium.webdriver.support import expected_conditions as EC
 
-opt = sys.argv[1]
+
+opt = None
+if len(sys.argv) > 1:
+    opt = sys.argv[1]
 
 
 def selenium_prep():
@@ -28,22 +34,51 @@ def selenium_prep():
     return driver
 
 
+with open('config.json') as f:
+    config = json.load(f)
+
 apobj = apprise.Apprise()
 
+if config.get("pbul_access_token"):
+    apobj.add(f"pbul://{config['pbul_access_token']}", tag='pbul')
 
 driver = selenium_prep()
 
 driver.get("https://sedin.keka.com/#/home/dashboard")
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "home-attendance-clockin-widget button")))
 
-if opt == "clock-in":
-    driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").click()
-    driver.save_screenshot(f"Logs/screenshot-clockin-{dt.datetime.now().isoformat()}.png")
+text = driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").text
+
+def clockin():
+    driver.find_element(By.XPATH, "//*[contains(text(), 'Web Clock-In')]").click()
+    driver.find_element(By.XPATH, "//*[contains(text(), 'Cancel')]").click() # Cancel allow location
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Clock-out')]")))
+    driver.save_screenshot(f"Screenshots/{dt.datetime.now().isoformat()}-clockin.png")
+    print("clocked-in")
     apobj.notify(title="Keka Attendance", body="clocked-in")
 
-if opt == "clock-out":
-    driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").click()
-    driver.find_element(By.CSS_SELECTOR, "home-attendance-clockin-widget button").click()
-    driver.save_screenshot(f"Logs/screenshot-clockout-{dt.datetime.now().isoformat()}.png")
+def clockout():
+    driver.find_element(By.XPATH, "//*[contains(text(), 'Clock-out')]").click()
+    driver.find_element(By.XPATH, "//*[contains(text(), 'Clock-out')]").click()
+    driver.find_element(By.XPATH, "//*[contains(text(), 'Cancel')]").click() # Cancel allow location
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Web Clock-In')]")))
+    driver.save_screenshot(f"Screenshots/{dt.datetime.now().isoformat()}-clockout.png")
+    print("clocked-out")
     apobj.notify(title="Keka Attendance", body="clocked-out")
+
+if opt:
+    if opt == 'clock-in' and text == "Web Clock-In":
+        clockin()
+    elif opt == 'clock-out' and text == "Clock-out":
+        clockout()
+    else:
+        print(f"{opt} already done")
+        apobj.notify(title="Keka Attendance", body=f"{opt} already done")
+else:
+    if text == "Web Clock-In":
+        clockin()
+
+    elif text == "Clock-out":
+        clockout()
 
 driver.quit()

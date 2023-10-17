@@ -14,7 +14,7 @@ if len(sys.argv) > 1:
     opt = sys.argv[1]
 
 
-def selenium_prep(profile_directory):
+def selenium_prep(profile_directory="Default"):
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1280,720")
     options.add_argument("--headless")

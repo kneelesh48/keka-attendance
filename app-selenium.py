@@ -114,7 +114,7 @@ for item in config.values():
     if item.get("pbul_access_token"):
         apobj.add(f"pbul://{item['pbul_access_token']}", tag="pbul")
 
-    driver = selenium_prep(item["profile_directory"])
+    driver = selenium_prep(profile_directory=item["profile_directory"])
 
     driver.get(f"https://{item['org']}.keka.com/#/home/dashboard")
     try:

@@ -1,6 +1,11 @@
 {
-    "user1": {
+    "user-1": {
         "org": "",
+        "profile_directory": "",
+        "keka_email": "",
+        "keka_password": "",
+        "ocr_space_apikey": "",
+        "pbul_access_token": "",
         "access_token": "",
         "locationAddress": {
             "longitude": 0.00,
@@ -11,8 +16,6 @@
             "city": "",
             "addressLine1": "",
             "addressLine2": ""
-        },
-        "profile_directory": "",
-        "pbul_access_token": ""
+        }
     }
 }

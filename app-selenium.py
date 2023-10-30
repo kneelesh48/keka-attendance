@@ -35,7 +35,7 @@ def selenium_prep(display: bool = False, profile_directory: str = "Default"):
     options.add_argument("user-data-dir=/root/Selenium")
     options.add_argument(f"profile-directory={profile_directory}")
     driver = webdriver.Chrome(options=options)
-    driver.implicitly_wait(2)
+    driver.implicitly_wait(5)
     return driver
 
 
@@ -65,23 +65,26 @@ def ocr(ocr_space_apikey: str, image_base64: str):
 def signin(keka_email: str, keka_password: str, ocr_space_apikey: str):
     driver.find_elements(By.CSS_SELECTOR, ".login-option button")[1].click()
 
-    captcha_base64 = driver.find_element(By.CSS_SELECTOR, "#imgCaptcha").get_attribute("src")
-
-    captcha_text = ""
-
-    while not captcha_text:
-        captcha_text = ocr(ocr_space_apikey=ocr_space_apikey, image_base64=captcha_base64)
-        if not captcha_text:
-            driver.refresh()
-
     driver.find_element(By.CSS_SELECTOR, "#email").send_keys(keka_email)
-    driver.find_element(By.CSS_SELECTOR, "#password").send_keys(keka_password)
-    driver.find_element(By.CSS_SELECTOR, "#captcha").send_keys(captcha_text)
-    driver.find_element(By.CSS_SELECTOR, "button").click()
+
+    while not driver.find_elements(By.XPATH, "//span[contains(text(), 'Send code to email')]"):
+        driver.find_element(By.CSS_SELECTOR, "#password").send_keys(keka_password)
+
+        captcha_base64 = driver.find_element(By.CSS_SELECTOR, "#imgCaptcha").get_attribute("src")
+
+        captcha_text = ""
+
+        while not captcha_text:
+            captcha_text = ocr(ocr_space_apikey=ocr_space_apikey, image_base64=captcha_base64)
+            if not captcha_text:
+                driver.refresh()
+
+        driver.find_element(By.CSS_SELECTOR, "#captcha").send_keys(captcha_text)
+        driver.find_element(By.CSS_SELECTOR, "button").click()
 
     driver.find_element(By.XPATH, "//span[contains(text(), 'Send code to email')]").click()
 
-    otp = input("Enter code sent to email")
+    otp = input("Enter code sent to email: ")
     driver.find_element(By.CSS_SELECTOR, "input").send_keys(otp)
     driver.find_element(By.CSS_SELECTOR, "button").click()
 
@@ -122,9 +125,9 @@ for item in config.values():
     except Exception:
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//h4[contains(text(), 'Login to Keka')]")))
         signin(
-            keka_email=config["keka_email"],
-            keka_password=config["keka_password"],
-            ocr_space_apikey=config["ocr_space_apikey"],
+            keka_email=item["keka_email"],
+            keka_password=item["keka_password"],
+            ocr_space_apikey=item["ocr_space_apikey"],
         )
     print("Page loaded!")
 

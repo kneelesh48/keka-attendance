@@ -63,6 +63,7 @@ def ocr(ocr_space_apikey: str, image_base64: str):
 
 
 def signin(keka_email: str, keka_password: str, ocr_space_apikey: str):
+    print("Signing in...")
     driver.find_elements(By.CSS_SELECTOR, ".login-option button")[1].click()
 
     driver.find_element(By.CSS_SELECTOR, "#email").send_keys(keka_email)

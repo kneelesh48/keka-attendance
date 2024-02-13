@@ -9,7 +9,7 @@
 
 ### Install chromedriver
 * Visit this page for latest chromedriver https://googlechromelabs.github.io/chrome-for-testing
-* `wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip`
+* `wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/120.0.6099.109/linux64/chromedriver-linux64.zip`
 * `unzip chromedriver-linux64.zip`
 * `mv chromedriver-linux64/chromedriver /usr/local/bin`
 
